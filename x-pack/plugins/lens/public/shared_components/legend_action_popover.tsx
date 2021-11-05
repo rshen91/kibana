@@ -67,8 +67,8 @@ export const LegendActionPopover: React.FunctionComponent<LegendActionPopoverPro
   const Button = (
     <div
       tabIndex={0}
-      role="button"
       ref={ref}
+      role="button"
       aria-pressed="false"
       style={{
         display: 'flex',
