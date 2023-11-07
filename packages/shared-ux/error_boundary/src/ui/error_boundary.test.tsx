@@ -39,17 +39,17 @@ describe('<KibanaErrorBoundary>', () => {
   it('renders a "soft" callout when an unknown error is caught', async () => {
     const reloadSpy = jest.spyOn(services, 'onClickRefresh');
 
-    const { findByTestId, findByText } = render(
+    const test = render(
       <Template>
         <ChunkLoadErrorComponent />
       </Template>
     );
-    (await findByTestId('clickForErrorBtn')).click();
+    (await test.findByTestId('clickForErrorBtn')).click();
 
-    expect(await findByText(strings.recoverable.callout.title())).toBeVisible();
-    expect(await findByText(strings.recoverable.callout.pageReloadButton())).toBeVisible();
+    expect(await test.findByText(strings.recoverable.callout.title())).toBeVisible();
+    expect(await test.findByText(strings.recoverable.callout.pageReloadButton())).toBeVisible();
 
-    (await findByTestId('recoverablePromptReloadBtn')).click();
+    (await test.findByTestId('errorBoundaryRecoverablePromptReloadBtn')).click();
 
     expect(reloadSpy).toHaveBeenCalledTimes(1);
   });
@@ -69,7 +69,7 @@ describe('<KibanaErrorBoundary>', () => {
     expect(await findByText(strings.fatal.callout.showDetailsButton())).toBeVisible();
     expect(await findByText(strings.fatal.callout.pageReloadButton())).toBeVisible();
 
-    (await findByTestId('fatalPromptReloadBtn')).click();
+    (await findByTestId('errorBoundaryFatalPromptReloadBtn')).click();
 
     expect(reloadSpy).toHaveBeenCalledTimes(1);
   });
