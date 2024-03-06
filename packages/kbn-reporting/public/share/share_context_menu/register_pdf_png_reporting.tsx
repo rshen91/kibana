@@ -9,9 +9,10 @@
 import { i18n } from '@kbn/i18n';
 import { ShareContext, ShareMenuProvider } from '@kbn/share-plugin/public';
 import React from 'react';
+import { ReportingAPIClient } from '../..';
+import { checkLicense } from '../../license_check';
 import { ExportPanelShareOpts, JobParamsProviderOptions, ReportingSharingData } from '.';
-import { ReportingAPIClient, checkLicense } from '../..';
-import { ScreenCapturePanelContent } from './screen_capture_panel_content_lazy';
+import { ReportingModalContent } from './reporting_panel_content_lazy';
 
 const getJobParams =
   (
@@ -133,75 +134,39 @@ export const reportingScreenshotShareProvider = ({
     const isV2Job = isJobV2Params(jobProviderOptions);
     const requiresSavedState = !isV2Job;
 
-    const pngReportType = isV2Job ? 'pngV2' : 'png';
-
-    const panelPng = {
+    shareActions.push({
       shareMenuItem: {
-        name: pngPanelTitle,
-        icon: 'document',
+        name: i18n.translate('xpack.reporting.shareContextMenu.ExportsButtonLabel', {
+          defaultMessage: 'Export',
+        }),
         toolTipContent: licenseToolTipContent,
         disabled: licenseDisabled || sharingData.reportingDisabled,
-        ['data-test-subj']: 'PNGReports',
-        sortOrder: 10,
+        ['data-test-subj']: 'imageExports',
       },
       panel: {
-        id: 'reportingPngPanel',
-        title: pngPanelTitle,
+        id: 'reportingImageModal',
+        title: i18n.translate('xpack.reporting.shareContextMenu.ReportsButtonLabel', {
+          defaultMessage: 'Generate report',
+        }),
         content: (
-          <ScreenCapturePanelContent
+          <ReportingModalContent
             apiClient={apiClient}
             toasts={toasts}
             uiSettings={uiSettings}
-            reportType={pngReportType}
-            objectId={objectId}
-            requiresSavedState={requiresSavedState}
-            getJobParams={getJobParams(apiClient, jobProviderOptions, pngReportType)}
-            isDirty={isDirty}
-            onClose={onClose}
-            theme={theme}
-          />
-        ),
-      },
-    };
-
-    const pdfPanelTitle = i18n.translate('reporting.share.contextMenu.pdfReportsButtonLabel', {
-      defaultMessage: 'PDF Reports',
-    });
-
-    const pdfReportType = isV2Job ? 'printablePdfV2' : 'printablePdf';
-
-    const panelPdf = {
-      shareMenuItem: {
-        name: pdfPanelTitle,
-        icon: 'document',
-        toolTipContent: licenseToolTipContent,
-        disabled: licenseDisabled || sharingData.reportingDisabled,
-        ['data-test-subj']: 'PDFReports',
-        sortOrder: 10,
-      },
-      panel: {
-        id: 'reportingPdfPanel',
-        title: pdfPanelTitle,
-        content: (
-          <ScreenCapturePanelContent
-            apiClient={apiClient}
-            toasts={toasts}
-            uiSettings={uiSettings}
-            reportType={pdfReportType}
             objectId={objectId}
             requiresSavedState={requiresSavedState}
             layoutOption={objectType === 'dashboard' ? 'print' : undefined}
-            getJobParams={getJobParams(apiClient, jobProviderOptions, pdfReportType)}
+            jobProviderOptions={jobProviderOptions}
             isDirty={isDirty}
-            onClose={onClose}
+            onClose={() => {
+              onClose();
+            }}
             theme={theme}
+            objectType={objectType}
           />
         ),
       },
-    };
-
-    shareActions.push(panelPng);
-    shareActions.push(panelPdf);
+    });
     return shareActions;
   };
 
