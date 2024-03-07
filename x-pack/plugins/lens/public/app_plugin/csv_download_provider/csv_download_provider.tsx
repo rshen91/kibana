@@ -12,8 +12,8 @@ import { downloadMultipleAs, ShareContext, ShareMenuProvider } from '@kbn/share-
 import { exporters } from '@kbn/data-plugin/public';
 import { IUiSettingsClient } from '@kbn/core-ui-settings-browser';
 import { FormatFactory } from '../../../common/types';
-import { DownloadPanelContent } from './csv_download_panel_content_lazy';
 import { TableInspectorAdapter } from '../../editor_frame_service/types';
+import { ReportingModalContent } from './csv_download_panel_content';
 
 declare global {
   interface Window {
@@ -117,7 +117,7 @@ export const downloadCsvShareProvider = ({
     const panelTitle = i18n.translate(
       'xpack.lens.reporting.shareContextMenu.csvReportsButtonLabel',
       {
-        defaultMessage: 'CSV Download',
+        defaultMessage: 'Export',
       }
     );
 
@@ -133,7 +133,7 @@ export const downloadCsvShareProvider = ({
           id: 'csvDownloadPanel',
           title: panelTitle,
           content: (
-            <DownloadPanelContent
+            <ReportingModalContent
               isDisabled={!csvEnabled}
               warnings={getWarnings(activeData)}
               onClick={async () => {

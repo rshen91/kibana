@@ -7,54 +7,14 @@
  */
 
 import { i18n } from '@kbn/i18n';
-import { ShareContext, ShareMenuProvider } from '@kbn/share-plugin/public';
 import React from 'react';
-import { ReportingAPIClient } from '../..';
+import { ShareContext, ShareMenuProvider } from '@kbn/share-plugin/public';
 import { checkLicense } from '../../license_check';
-import { ExportPanelShareOpts, JobParamsProviderOptions, ReportingSharingData } from '.';
+import { ExportModalShareOpts, JobParamsProviderOptions, ReportingSharingData } from '.';
 import { ReportingModalContent } from './reporting_panel_content_lazy';
 
-const getJobParams =
-  (
-    apiClient: ReportingAPIClient,
-    opts: JobParamsProviderOptions,
-    type: 'png' | 'pngV2' | 'printablePdf' | 'printablePdfV2'
-  ) =>
-  () => {
-    const {
-      objectType,
-      sharingData: { title, layout, locatorParams },
-    } = opts;
-
-    const baseParams = {
-      objectType,
-      layout,
-      title,
-    };
-
-    if (type === 'printablePdfV2') {
-      // multi locator for PDF V2
-      return { ...baseParams, locatorParams: [locatorParams] };
-    } else if (type === 'pngV2') {
-      // single locator for PNG V2
-      return { ...baseParams, locatorParams };
-    }
-
-    // Relative URL must have URL prefix (Spaces ID prefix), but not server basePath
-    // Replace hashes with original RISON values.
-    const relativeUrl = opts.shareableUrl.replace(
-      window.location.origin + apiClient.getServerBasePath(),
-      ''
-    );
-
-    if (type === 'printablePdf') {
-      // multi URL for PDF
-      return { ...baseParams, relativeUrls: [relativeUrl] };
-    }
-
-    // single URL for PNG
-    return { ...baseParams, relativeUrl };
-  };
+export const isJobV2Params = ({ sharingData }: { sharingData: Record<string, unknown> }): boolean =>
+  sharingData.locatorParams != null;
 
 export const reportingScreenshotShareProvider = ({
   apiClient,
@@ -64,7 +24,7 @@ export const reportingScreenshotShareProvider = ({
   application,
   usesUiCapabilities,
   theme,
-}: ExportPanelShareOpts): ShareMenuProvider => {
+}: ExportModalShareOpts): ShareMenuProvider => {
   const getShareMenuItems = ({
     objectType,
     objectId,
@@ -116,20 +76,11 @@ export const reportingScreenshotShareProvider = ({
     const { sharingData } = shareOpts as unknown as { sharingData: ReportingSharingData };
     const shareActions = [];
 
-    const pngPanelTitle = i18n.translate('reporting.share.contextMenu.pngReportsButtonLabel', {
-      defaultMessage: 'PNG Reports',
-    });
-
     const jobProviderOptions: JobParamsProviderOptions = {
       shareableUrl: isDirty ? shareableUrl : shareableUrlForSavedObject ?? shareableUrl,
       objectType,
       sharingData,
     };
-    const isJobV2Params = ({
-      sharingData: _sharingData,
-    }: {
-      sharingData: Record<string, unknown>;
-    }) => _sharingData.locatorParams != null;
 
     const isV2Job = isJobV2Params(jobProviderOptions);
     const requiresSavedState = !isV2Job;

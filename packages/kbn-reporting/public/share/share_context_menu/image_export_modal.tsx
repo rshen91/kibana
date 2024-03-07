@@ -8,10 +8,12 @@
 
 import {
   EuiButton,
+  EuiIcon,
+  EuiButtonEmpty,
+  EuiCopy,
   EuiFlexGroup,
   EuiForm,
   EuiFormRow,
-  EuiIcon,
   EuiModalFooter,
   EuiRadioGroup,
   EuiSpacer,
@@ -31,6 +33,8 @@ import { BaseParams } from '@kbn/reporting-common/types';
 import { toMountPoint } from '@kbn/kibana-react-plugin/public';
 import { ReportingAPIClient } from '../..';
 import { JobParamsProviderOptions } from '.';
+import { ErrorUnsavedWorkPanel, ErrorUrlTooLongPanel } from './reporting_panel_content/components';
+import { getMaxUrlLength } from './reporting_panel_content/constants';
 
 export interface ReportingModalProps {
   apiClient: ReportingAPIClient;
@@ -73,8 +77,9 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
   const [createReportingJob, setCreatingReportJob] = useState(false);
   const [selectedRadio, setSelectedRadio] = useState<AllowedImageExportType>('printablePdfV2');
   const [usePrintLayout, setPrintLayout] = useState(false);
-  const [, setAbsoluteUrl] = useState('');
+  const [absoluteUrl, setAbsoluteUrl] = useState('');
   const isMounted = useMountedState();
+  const exceedsMaxLength = absoluteUrl.length >= getMaxUrlLength();
 
   const getJobsParams = useCallback(
     (type: AllowedImageExportType, opts?: JobParamsProviderOptions) => {
@@ -258,6 +263,39 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
     }
     return null;
   };
+  const renderCopyURLButton = ({
+    isUnsaved,
+  }: {
+    isUnsaved: boolean;
+    exceedsMaxLength: boolean;
+  }) => {
+    if (isUnsaved && exceedsMaxLength) {
+      return <ErrorUrlTooLongPanel isUnsaved />;
+    } else if (exceedsMaxLength) {
+      return <ErrorUrlTooLongPanel isUnsaved={false} />;
+    }
+    return (
+      <>
+        {isUnsaved && <ErrorUnsavedWorkPanel />}
+        <EuiCopy textToCopy={absoluteUrl} anchorClassName="eui-displayBlock">
+          {(copy) => (
+            <EuiButtonEmpty
+              iconType="copy"
+              disabled={isUnsaved}
+              flush="both"
+              onClick={copy}
+              data-test-subj="shareReportingCopyURL"
+            >
+              <FormattedMessage
+                id="xpack.reporting.modalContent.copyUrlButtonLabel"
+                defaultMessage="Copy POST URL  "
+              />
+            </EuiButtonEmpty>
+          )}
+        </EuiCopy>
+      </>
+    );
+  };
 
   const saveWarningMessageWithButton =
     objectId === undefined || objectId === '' || !isSaved || props.isDirty || isStale ? (
@@ -314,6 +352,27 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         </EuiFlexGroup>
         <EuiSpacer size="m" />
         {renderOptions()}
+        <EuiFlexGroup direction="row" justifyContent={'spaceBetween'}>
+          {layoutOption !== 'canvas' && (
+            <EuiRadioGroup
+              options={[
+                { id: 'printablePdfV2', label: 'PDF' },
+                { id: 'pngV2', label: 'PNG', 'data-test-subj': 'pngReportOption' },
+              ]}
+              onChange={(id) => {
+                setSelectedRadio(id as Exclude<AllowedImageExportType, 'printablePdf'>);
+              }}
+              name="image reporting radio group"
+              idSelected={selectedRadio}
+              legend={{
+                children: <span>File type</span>,
+              }}
+            />
+          )}
+        </EuiFlexGroup>
+        <EuiSpacer size="m" />
+        {renderOptions()}
+        {renderCopyURLButton({ isUnsaved: !isSaved, exceedsMaxLength })}
       </EuiForm>
       <EuiModalFooter>{saveWarningMessageWithButton}</EuiModalFooter>
     </>
