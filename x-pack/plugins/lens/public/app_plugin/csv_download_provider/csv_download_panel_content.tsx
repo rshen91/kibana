@@ -55,20 +55,20 @@ export interface ReportingModalProps {
   objectId?: string;
   isDirty?: boolean;
   onClose: () => void;
+  onClick: () => void;
   theme: ThemeServiceSetup;
-  layoutOption?: 'print' | 'canvas';
-  // canvas breaks if required
   jobProviderOptions?: JobParamsProviderOptions;
-  // needed for canvas
   getJobParams?: JobAppParamsPDFV2;
   objectType: string;
+  isDisabled: boolean;
+  warnings: string[];
 }
 
 type AppParams = Omit<BaseParams, 'browserTimezone' | 'version'>;
 
 export type Props = ReportingModalProps & { intl: InjectedIntl };
 
-type AllowedImageExportType = 'pngV2' | 'printablePdfV2' | 'printablePdf';
+type AllowedImageExportType = 'pngV2' | 'printablePdfV2' | 'printablePdf' | 'csv';
 
 export const ReportingModalContentUI: FC<Props> = (props: Props) => {
   const {
@@ -78,15 +78,14 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
     theme,
     onClose,
     objectId,
-    layoutOption,
     jobProviderOptions,
     objectType,
+    isDisabled,
   } = props;
   const isSaved = Boolean(objectId);
   const [isStale, setIsStale] = useState(false);
   const [createReportingJob, setCreatingReportJob] = useState(false);
   const [selectedRadio, setSelectedRadio] = useState<AllowedImageExportType>('printablePdfV2');
-  const [usePrintLayout] = useState(false);
   const [absoluteUrl, setAbsoluteUrl] = useState('');
   const isMounted = useMountedState();
   const exceedsMaxLength = absoluteUrl.length >= getMaxUrlLength();
@@ -106,6 +105,13 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         layout,
         title,
       };
+      if (type === 'csv') {
+        return {
+          title,
+          objectType,
+          locatorParams,
+        };
+      }
 
       if (type === 'printablePdfV2') {
         // multi locator for PDF V2
@@ -130,39 +136,19 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
       // single URL for PNG
       return { ...baseParams, relativeUrl };
     },
-    [apiClient, objectType, props.getJobParams]
+    [apiClient, props.getJobParams, objectType]
   );
-
-  const getLayout = useCallback((): LayoutParams => {
-    const { layout } = getJobsParams(selectedRadio, jobProviderOptions);
-
-    let dimensions = layout?.dimensions;
-
-    if (!dimensions) {
-      const el = document.querySelector('[data-shared-items-container]');
-      const { height, width } = el ? el.getBoundingClientRect() : { height: 768, width: 1024 };
-      dimensions = { height, width };
-    }
-    if (usePrintLayout) {
-      return { id: 'print', dimensions };
-    }
-
-    return { id: 'preserve_layout', dimensions };
-  }, [getJobsParams, jobProviderOptions, selectedRadio, usePrintLayout]);
 
   const getJobParams = useCallback(
     (shareableUrl?: boolean) => {
-      return { ...getJobsParams(selectedRadio, jobProviderOptions), layout: getLayout() };
+      return { ...getJobsParams(selectedRadio, jobProviderOptions) };
     },
-    [getJobsParams, getLayout, jobProviderOptions, selectedRadio]
+    [getJobsParams, jobProviderOptions, selectedRadio]
   );
 
   const getAbsoluteReportGenerationUrl = useMemo(
     () => () => {
-      if (
-        getJobsParams(selectedRadio, jobProviderOptions) !== undefined &&
-        objectType !== 'Canvas'
-      ) {
+      if (getJobsParams(selectedRadio, jobProviderOptions) !== undefined) {
         const relativePath = apiClient.getReportingPublicJobPath(
           selectedRadio,
           apiClient.getDecoratedJobParams(getJobParams(true) as unknown as AppParams)
@@ -170,7 +156,7 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         return setAbsoluteUrl(url.resolve(window.location.href, relativePath));
       }
     },
-    [apiClient, getJobParams, selectedRadio, getJobsParams, objectType, jobProviderOptions]
+    [apiClient, getJobParams, selectedRadio, getJobsParams, jobProviderOptions]
   );
 
   const markAsStale = useCallback(() => {
@@ -277,8 +263,8 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
     );
   };
 
-  const saveWarningMessageWithButton = () => {
-    return objectId === undefined || objectId === '' || !isSaved || props.isDirty || isStale ? (
+  const saveWarningMessageWithButton =
+    objectId === undefined || objectId === '' || !isSaved || props.isDirty || isStale ? (
       <EuiFormRow>
         <EuiToolTip content="Please save your work before generating a report.">
           <EuiButton
@@ -309,12 +295,28 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         />
       </EuiButton>
     );
-  };
+
   return (
     <>
       <EuiForm className="kbnShareContextMenu__finalPanel" data-test-subj="shareReportingForm">
         <EuiFlexGroup direction="row" justifyContent={'spaceBetween'}>
-          {layoutOption !== 'canvas' && (
+          {objectType === 'lens' && !isDisabled ? (
+            <EuiRadioGroup
+              options={[
+                { id: 'printablePdfV2', label: 'PDF' },
+                { id: 'pngV2', label: 'PNG', 'data-test-subj': 'pngReportOption' },
+                { id: 'csv', label: 'CSV', 'data-test-subj': 'csvReportOption' },
+              ]}
+              onChange={(id) => {
+                setSelectedRadio(id as Exclude<AllowedImageExportType, 'printablePdf'>);
+              }}
+              name="image reporting radio group"
+              idSelected={selectedRadio}
+              legend={{
+                children: <span>File type</span>,
+              }}
+            />
+          ) : (
             <EuiRadioGroup
               options={[
                 { id: 'printablePdfV2', label: 'PDF' },
@@ -334,7 +336,7 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         <EuiSpacer size="m" />
         {renderCopyURLButton({ isUnsaved: !isSaved, exceedsMaxLength })}
       </EuiForm>
-      <EuiModalFooter>{saveWarningMessageWithButton()}</EuiModalFooter>
+      <EuiModalFooter>{saveWarningMessageWithButton}</EuiModalFooter>
     </>
   );
 };

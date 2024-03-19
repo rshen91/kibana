@@ -11,6 +11,8 @@ import { tableHasFormulas } from '@kbn/data-plugin/common';
 import { downloadMultipleAs, ShareContext, ShareMenuProvider } from '@kbn/share-plugin/public';
 import { exporters } from '@kbn/data-plugin/public';
 import { IUiSettingsClient } from '@kbn/core-ui-settings-browser';
+import { ReportingAPIClient } from '@kbn/reporting-public';
+import { CoreSetup, ToastsSetup } from '@kbn/core/public';
 import { FormatFactory } from '../../../common/types';
 import { TableInspectorAdapter } from '../../editor_frame_service/types';
 import { ReportingModalContent } from './csv_download_panel_content';
@@ -96,11 +98,17 @@ function getWarnings(activeData: TableInspectorAdapter) {
 interface DownloadPanelShareOpts {
   uiSettings: IUiSettingsClient;
   formatFactoryFn: () => FormatFactory;
+  reportingApiClient: ReportingAPIClient;
+  toasts: ToastsSetup;
+  theme: CoreSetup['theme'];
 }
 
 export const downloadCsvShareProvider = ({
   uiSettings,
   formatFactoryFn,
+  reportingApiClient,
+  toasts,
+  theme,
 }: DownloadPanelShareOpts): ShareMenuProvider => {
   const getShareMenuItems = ({ objectType, sharingData, onClose }: ShareContext) => {
     if ('lens' !== objectType) {
@@ -113,7 +121,6 @@ export const downloadCsvShareProvider = ({
       csvEnabled: boolean;
       columnsSorting?: string[];
     };
-
     const panelTitle = i18n.translate(
       'xpack.lens.reporting.shareContextMenu.csvReportsButtonLabel',
       {
@@ -134,8 +141,15 @@ export const downloadCsvShareProvider = ({
           title: panelTitle,
           content: (
             <ReportingModalContent
+              objectType={objectType}
+              apiClient={reportingApiClient}
+              toasts={toasts}
+              uiSettings={uiSettings}
+              requiresSavedState={false}
+              onClose={onClose}
               isDisabled={!csvEnabled}
               warnings={getWarnings(activeData)}
+              theme={theme}
               onClick={async () => {
                 await downloadCSVs({
                   title,

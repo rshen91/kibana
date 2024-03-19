@@ -352,26 +352,6 @@ export const ReportingModalContentUI: FC<Props> = (props: Props) => {
         </EuiFlexGroup>
         <EuiSpacer size="m" />
         {renderOptions()}
-        <EuiFlexGroup direction="row" justifyContent={'spaceBetween'}>
-          {layoutOption !== 'canvas' && (
-            <EuiRadioGroup
-              options={[
-                { id: 'printablePdfV2', label: 'PDF' },
-                { id: 'pngV2', label: 'PNG', 'data-test-subj': 'pngReportOption' },
-              ]}
-              onChange={(id) => {
-                setSelectedRadio(id as Exclude<AllowedImageExportType, 'printablePdf'>);
-              }}
-              name="image reporting radio group"
-              idSelected={selectedRadio}
-              legend={{
-                children: <span>File type</span>,
-              }}
-            />
-          )}
-        </EuiFlexGroup>
-        <EuiSpacer size="m" />
-        {renderOptions()}
         {renderCopyURLButton({ isUnsaved: !isSaved, exceedsMaxLength })}
       </EuiForm>
       <EuiModalFooter>{saveWarningMessageWithButton}</EuiModalFooter>
