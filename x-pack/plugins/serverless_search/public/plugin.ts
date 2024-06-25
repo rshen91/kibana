@@ -29,6 +29,7 @@ import {
 import { createIndexDocumentsContent } from './application/components/index_documents/documents_tab';
 import { getErrorCode, getErrorMessage, isKibanaServerError } from './utils/get_error_message';
 import { navigationTree } from './navigation_tree';
+import { helpTopics } from './mappings_for_docs';
 
 export class ServerlessSearchPlugin
   implements
@@ -133,7 +134,11 @@ export class ServerlessSearchPlugin
       },
     });
 
-    setupDeps.discover.showInlineTopNav();
+    core.helpCenter.configure({
+      helpCenterUrl: 'https://www.elastic.co/docs/current/serverless/',
+      version: '0.0.1',
+      helpTopics,
+    });
 
     return {};
   }

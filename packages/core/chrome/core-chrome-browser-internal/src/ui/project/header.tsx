@@ -37,6 +37,7 @@ import useObservable from 'react-use/lib/useObservable';
 import { debounceTime, Observable } from 'rxjs';
 import type { CustomBranding } from '@kbn/core-custom-branding-common';
 
+import { LocationHelpButton } from '@elastic/help-center-host';
 import { useHeaderActionMenuMounter } from '../header/header_action_menu';
 import { Breadcrumbs } from './breadcrumbs';
 import { HeaderHelpMenu } from '../header/header_help_menu';
@@ -282,6 +283,9 @@ export const ProjectHeader = ({
             <EuiHeaderSection side="right">
               <EuiHeaderSectionItem>
                 <HeaderNavControls navControls$={observables.navControlsCenter$} />
+              </EuiHeaderSectionItem>
+              <EuiHeaderSectionItem>
+                <LocationHelpButton />
               </EuiHeaderSectionItem>
 
               <EuiHeaderSectionItem>
