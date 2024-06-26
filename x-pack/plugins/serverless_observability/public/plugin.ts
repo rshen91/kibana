@@ -17,6 +17,7 @@ import {
   ServerlessObservabilityPublicSetupDependencies,
   ServerlessObservabilityPublicStartDependencies,
 } from './types';
+import { helpTopics } from './mappings_for_docs';
 
 export class ServerlessObservabilityPlugin
   implements
@@ -41,6 +42,12 @@ export class ServerlessObservabilityPlugin
           .then(([_coreStart, startDeps]) => startDeps.data.search.search),
       })
     );
+
+    _core.helpCenter.configure({
+      helpCenterUrl: 'https://www.elastic.co/docs/current/serverless/',
+      version: '0.0.1',
+      helpTopics,
+    });
 
     return {};
   }
