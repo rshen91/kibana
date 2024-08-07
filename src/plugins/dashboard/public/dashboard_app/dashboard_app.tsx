@@ -68,9 +68,13 @@ export function DashboardApp({
   history,
 }: DashboardAppProps) {
   const [showNoDataPage, setShowNoDataPage] = useState<boolean>(false);
+  const [redirectToExpandedPanel, setRedirectToExpandedPanel] = useState<string | undefined>();
 
   useMount(() => {
-    (async () => setShowNoDataPage(await isDashboardAppInNoDataState()))();
+    (async () => {
+      setShowNoDataPage(await isDashboardAppInNoDataState());
+      setRedirectToExpandedPanel(loadAndRemoveDashboardState(kbnUrlStateStorage).expandedPanelId);
+    })();
   });
   const [dashboardAPI, setDashboardAPI] = useState<AwaitingDashboardAPI>(null);
 
@@ -118,10 +122,13 @@ export function DashboardApp({
    * Clear search session when leaving dashboard route
    */
   useEffect(() => {
+    if (redirectToExpandedPanel) {
+      return dashboardAPI?.setExpandedPanelId(redirectToExpandedPanel);
+    }
     return () => {
       search.session.clear();
     };
-  }, [search.session]);
+  }, [dashboardAPI, kbnUrlStateStorage, redirectToExpandedPanel, search.session]);
 
   /**
    * Validate saved object load outcome
@@ -193,12 +200,15 @@ export function DashboardApp({
    */
   useEffect(() => {
     if (!dashboardAPI) return;
+    if (redirectToExpandedPanel) {
+      return dashboardAPI?.setExpandedPanelId(redirectToExpandedPanel);
+    }
     const { stopWatchingAppStateInUrl } = startSyncingDashboardUrlState({
       kbnUrlStateStorage,
       dashboardAPI,
     });
     return () => stopWatchingAppStateInUrl();
-  }, [dashboardAPI, kbnUrlStateStorage, savedDashboardId]);
+  }, [dashboardAPI, kbnUrlStateStorage, redirectToExpandedPanel, savedDashboardId]);
 
   const locator = useMemo(() => url?.locators.get(DASHBOARD_APP_LOCATOR), [url]);
 
@@ -221,6 +231,7 @@ export function DashboardApp({
           )}
 
           {getLegacyConflictWarning?.()}
+
           <DashboardRenderer
             locator={locator}
             ref={setDashboardAPI}
@@ -228,6 +239,7 @@ export function DashboardApp({
             savedObjectId={savedDashboardId}
             showPlainSpinner={showPlainSpinner}
             getCreationOptions={getCreationOptions}
+            redirectToExpandedPanel={redirectToExpandedPanel}
           />
         </>
       )}

@@ -48,10 +48,21 @@ export interface DashboardRendererProps {
   dashboardRedirect?: DashboardRedirect;
   getCreationOptions?: () => Promise<DashboardCreationOptions>;
   locator?: Pick<LocatorPublic<DashboardLocatorParams>, 'navigate' | 'getRedirectUrl'>;
+  redirectToExpandedPanel?: string;
 }
 
 export const DashboardRenderer = forwardRef<AwaitingDashboardAPI, DashboardRendererProps>(
-  ({ savedObjectId, getCreationOptions, dashboardRedirect, showPlainSpinner, locator }, ref) => {
+  (
+    {
+      savedObjectId,
+      getCreationOptions,
+      dashboardRedirect,
+      showPlainSpinner,
+      locator,
+      redirectToExpandedPanel,
+    },
+    ref
+  ) => {
     const dashboardRoot = useRef(null);
     const dashboardViewport = useRef(null);
     const [loading, setLoading] = useState(true);
@@ -187,6 +198,7 @@ export const DashboardRenderer = forwardRef<AwaitingDashboardAPI, DashboardRende
             <ParentClassController
               viewportRef={dashboardViewport.current}
               dashboard={dashboardContainer}
+              expandedPanelId={redirectToExpandedPanel}
             />
           )}
         {renderDashboardContents()}
@@ -203,11 +215,14 @@ export const DashboardRenderer = forwardRef<AwaitingDashboardAPI, DashboardRende
 const ParentClassController = ({
   dashboard,
   viewportRef,
+  expandedPanelId,
 }: {
   dashboard: DashboardContainer;
   viewportRef: HTMLDivElement;
+  expandedPanelId?: string;
 }) => {
-  const maximizedPanelId = dashboard.select((state) => state.componentState.expandedPanelId);
+  const maximizedPanelId =
+    dashboard.select((state) => state.componentState.expandedPanelId) || expandedPanelId;
 
   useLayoutEffect(() => {
     const parentDiv = viewportRef.parentElement;
