@@ -16,6 +16,7 @@ import { useExecutionContext } from '@kbn/kibana-react-plugin/public';
 import { createKbnUrlStateStorage, withNotifyOnErrors } from '@kbn/kibana-utils-plugin/public';
 
 import { DASHBOARD_APP_LOCATOR } from '@kbn/deeplinks-analytics';
+import { DashboardContainerInput } from '../../common';
 import {
   DashboardAppNoDataPage,
   isDashboardAppInNoDataState,
@@ -36,7 +37,11 @@ import { pluginServices } from '../services/plugin_services';
 import { AwaitingDashboardAPI } from '../dashboard_container';
 import { DashboardRedirect } from '../dashboard_container/types';
 import { useDashboardMountContext } from './hooks/dashboard_mount_context';
-import { createDashboardEditUrl, DASHBOARD_APP_ID } from '../dashboard_constants';
+import {
+  createDashboardEditUrl,
+  DASHBOARD_APP_ID,
+  DASHBOARD_STATE_STORAGE_KEY,
+} from '../dashboard_constants';
 import { useDashboardOutcomeValidation } from './hooks/use_dashboard_outcome_validation';
 import { loadDashboardHistoryLocationState } from './locator/load_dashboard_history_location_state';
 import type { DashboardCreationOptions } from '../dashboard_container/embeddable/dashboard_container_factory';
@@ -73,7 +78,10 @@ export function DashboardApp({
   useMount(() => {
     (async () => {
       setShowNoDataPage(await isDashboardAppInNoDataState());
-      setRedirectToExpandedPanel(loadAndRemoveDashboardState(kbnUrlStateStorage).expandedPanelId);
+      const state: DashboardContainerInput | null = kbnUrlStateStorage.get(
+        DASHBOARD_STATE_STORAGE_KEY
+      );
+      if (state) setRedirectToExpandedPanel(state?.expandedPanelId);
     })();
   });
   const [dashboardAPI, setDashboardAPI] = useState<AwaitingDashboardAPI>(null);
