@@ -131,7 +131,7 @@ export function DashboardApp({
    */
   useEffect(() => {
     if (redirectToExpandedPanel) {
-      return dashboardAPI?.setExpandedPanelId(redirectToExpandedPanel);
+      return dashboardAPI?.setExpandedPanelId(redirectToExpandedPanel) && search.session.clear();
     }
     return () => {
       search.session.clear();
